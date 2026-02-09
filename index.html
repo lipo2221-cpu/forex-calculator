@@ -66,6 +66,13 @@
     color: #003366;
     word-break: break-word;
   }
+
+  .hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.35;
+  }
 </style>
 </head>
 <body>
@@ -80,11 +87,13 @@
   <select id="pair">
     <option value="USD">USD-based (EUR/USD, GBP/USD, etc.)</option>
     <option value="JPY">JPY-based (USD/JPY)</option>
+    <option value="XAU">XAUUSD (Gold)</option>
   </select>
 
   <button onclick="calculatePositionSize()">Calculate Lot Size</button>
 
   <div class="result" id="result"></div>
+  <div class="hint" id="hint"></div>
 </div>
 
 <script>
@@ -94,7 +103,26 @@ window.onload = function() {
   if(localStorage.getItem('risk')) document.getElementById('risk').value = localStorage.getItem('risk');
   if(localStorage.getItem('stopLoss')) document.getElementById('stopLoss').value = localStorage.getItem('stopLoss');
   if(localStorage.getItem('pair')) document.getElementById('pair').value = localStorage.getItem('pair');
+
+  updateHint();
 };
+
+document.getElementById('pair').addEventListener('change', updateHint);
+
+function updateHint() {
+  const pairType = document.getElementById('pair').value;
+  const hintEl = document.getElementById('hint');
+
+  if (pairType === "XAU") {
+    hintEl.innerText =
+      "XAUUSD note: This assumes 1 pip = $0.01 and 1.00 lot = 100 oz (≈ $1 per pip per lot). " +
+      "If your broker uses different sizing (e.g., 1 pip = $0.10 or different lot contract), results will differ.";
+  } else if (pairType === "JPY") {
+    hintEl.innerText = "JPY note: pip value is approximated at $9.13 per pip per 1.00 lot for USDJPY.";
+  } else {
+    hintEl.innerText = "USD-based note: assumes $10 per pip per 1.00 lot (standard lot).";
+  }
+}
 
 function calculatePositionSize() {
   const balance = parseFloat(document.getElementById('balance').value);
@@ -113,14 +141,20 @@ function calculatePositionSize() {
   localStorage.setItem('stopLoss', stopLoss);
   localStorage.setItem('pair', pairType);
 
+  updateHint();
+
   const riskAmount = (riskPercent / 100) * balance;
+
+  // Default pip values per 1.00 standard lot
   let pipValue = 10; // USD-based pair
 
-  if(pairType === "JPY") pipValue = 9.13; // USD/JPY approximate pip value
+  if (pairType === "JPY") pipValue = 9.13; // USD/JPY approximate pip value
+  if (pairType === "XAU") pipValue = 1;    // XAUUSD assumption: $1 per pip per 1.00 lot (pip=$0.01, lot=100 oz)
 
   const lotSize = riskAmount / (stopLoss * pipValue);
 
-  document.getElementById('result').innerText = `Recommended Lot Size:\n${lotSize.toFixed(2)} standard lots`;
+  document.getElementById('result').innerText =
+    `Recommended Lot Size:\n${lotSize.toFixed(2)} standard lots`;
 }
 </script>
 
