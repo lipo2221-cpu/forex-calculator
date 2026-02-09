@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Forex Position Size Calculator</title>
+
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -24,6 +25,7 @@
     max-width: 360px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.2);
     text-align: center;
+    color: #111;
   }
 
   h2 {
@@ -38,6 +40,7 @@
     border-radius: 8px;
     border: 1px solid #ccc;
     font-size: 16px;
+    box-sizing: border-box;
   }
 
   button {
@@ -65,18 +68,63 @@
     font-weight: bold;
     color: #003366;
     word-break: break-word;
+    white-space: pre-line;
   }
 
   .hint {
-    margin-top: 8px;
+    margin-top: 10px;
     font-size: 12px;
     color: #555;
     line-height: 1.35;
   }
+
+  /* ✅ Auto dark mode (follows phone theme) */
+  @media (prefers-color-scheme: dark) {
+    body {
+      background: #0f172a;
+    }
+
+    .calculator {
+      background: #111827;
+      color: #e5e7eb;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+
+    h2 {
+      color: #e5e7eb;
+    }
+
+    input, select {
+      background: #1f2937;
+      color: #e5e7eb;
+      border: 1px solid #374151;
+    }
+
+    input::placeholder {
+      color: #9ca3af;
+    }
+
+    button {
+      background-color: #2563eb;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    .result {
+      background-color: #1e3a8a;
+      color: #ffffff;
+    }
+
+    .hint {
+      color: #9ca3af;
+    }
+  }
 </style>
 </head>
-<body>
 
+<body>
 <div class="calculator">
   <h2>Forex Position Size Calculator</h2>
 
@@ -97,65 +145,66 @@
 </div>
 
 <script>
-// Load saved inputs on page load
-window.onload = function() {
-  if(localStorage.getItem('balance')) document.getElementById('balance').value = localStorage.getItem('balance');
-  if(localStorage.getItem('risk')) document.getElementById('risk').value = localStorage.getItem('risk');
-  if(localStorage.getItem('stopLoss')) document.getElementById('stopLoss').value = localStorage.getItem('stopLoss');
-  if(localStorage.getItem('pair')) document.getElementById('pair').value = localStorage.getItem('pair');
+  // Load saved inputs on page load
+  window.onload = function() {
+    if (localStorage.getItem('balance')) document.getElementById('balance').value = localStorage.getItem('balance');
+    if (localStorage.getItem('risk')) document.getElementById('risk').value = localStorage.getItem('risk');
+    if (localStorage.getItem('stopLoss')) document.getElementById('stopLoss').value = localStorage.getItem('stopLoss');
+    if (localStorage.getItem('pair')) document.getElementById('pair').value = localStorage.getItem('pair');
 
-  updateHint();
-};
+    updateHint();
+  };
 
-document.getElementById('pair').addEventListener('change', updateHint);
+  document.getElementById('pair').addEventListener('change', updateHint);
 
-function updateHint() {
-  const pairType = document.getElementById('pair').value;
-  const hintEl = document.getElementById('hint');
+  function updateHint() {
+    const pairType = document.getElementById('pair').value;
+    const hintEl = document.getElementById('hint');
 
-  if (pairType === "XAU") {
-    hintEl.innerText =
-      "XAUUSD note: This assumes 1 pip = $0.01 and 1.00 lot = 100 oz (≈ $1 per pip per lot). " +
-      "If your broker uses different sizing (e.g., 1 pip = $0.10 or different lot contract), results will differ.";
-  } else if (pairType === "JPY") {
-    hintEl.innerText = "JPY note: pip value is approximated at $9.13 per pip per 1.00 lot for USDJPY.";
-  } else {
-    hintEl.innerText = "USD-based note: assumes $10 per pip per 1.00 lot (standard lot).";
-  }
-}
-
-function calculatePositionSize() {
-  const balance = parseFloat(document.getElementById('balance').value);
-  const riskPercent = parseFloat(document.getElementById('risk').value);
-  const stopLoss = parseFloat(document.getElementById('stopLoss').value);
-  const pairType = document.getElementById('pair').value;
-
-  if (isNaN(balance) || isNaN(riskPercent) || isNaN(stopLoss) || balance <= 0 || stopLoss <= 0){
-    document.getElementById('result').innerText = "Please enter valid numbers!";
-    return;
+    if (pairType === "XAU") {
+      hintEl.innerText =
+        "XAUUSD note: Assumes contract size = 100 oz and tick size = 0.01 (so ≈ $1 per pip per 1.00 lot if 1 pip = $0.01).";
+    } else if (pairType === "JPY") {
+      hintEl.innerText =
+        "JPY note: Pip value is approximated at $9.13 per pip per 1.00 lot for USDJPY.";
+    } else {
+      hintEl.innerText =
+        "USD-based note: Assumes $10 per pip per 1.00 lot (standard lot).";
+    }
   }
 
-  // Save inputs in local storage
-  localStorage.setItem('balance', balance);
-  localStorage.setItem('risk', riskPercent);
-  localStorage.setItem('stopLoss', stopLoss);
-  localStorage.setItem('pair', pairType);
+  function calculatePositionSize() {
+    const balance = parseFloat(document.getElementById('balance').value);
+    const riskPercent = parseFloat(document.getElementById('risk').value);
+    const stopLoss = parseFloat(document.getElementById('stopLoss').value);
+    const pairType = document.getElementById('pair').value;
 
-  updateHint();
+    if (isNaN(balance) || isNaN(riskPercent) || isNaN(stopLoss) || balance <= 0 || stopLoss <= 0) {
+      document.getElementById('result').innerText = "Please enter valid numbers!";
+      return;
+    }
 
-  const riskAmount = (riskPercent / 100) * balance;
+    // Save inputs in local storage
+    localStorage.setItem('balance', balance);
+    localStorage.setItem('risk', riskPercent);
+    localStorage.setItem('stopLoss', stopLoss);
+    localStorage.setItem('pair', pairType);
 
-  // Default pip values per 1.00 standard lot
-  let pipValue = 10; // USD-based pair
+    updateHint();
 
-  if (pairType === "JPY") pipValue = 9.13; // USD/JPY approximate pip value
-  if (pairType === "XAU") pipValue = 1;    // XAUUSD assumption: $1 per pip per 1.00 lot (pip=$0.01, lot=100 oz)
+    const riskAmount = (riskPercent / 100) * balance;
 
-  const lotSize = riskAmount / (stopLoss * pipValue);
+    // Default pip values per 1.00 standard lot
+    let pipValue = 10; // USD-based pair
 
-  document.getElementById('result').innerText =
-    `Recommended Lot Size:\n${lotSize.toFixed(2)} standard lots`;
-}
+    if (pairType === "JPY") pipValue = 9.13; // USD/JPY approximate pip value
+    if (pairType === "XAU") pipValue = 1;    // XAUUSD: contract=100, tick=0.01 => ~$1 per pip (pip=$0.01) per 1.00 lot
+
+    const lotSize = riskAmount / (stopLoss * pipValue);
+
+    document.getElementById('result').innerText =
+      `Recommended Lot Size:\n${lotSize.toFixed(2)} standard lots`;
+  }
 </script>
 
 </body>
