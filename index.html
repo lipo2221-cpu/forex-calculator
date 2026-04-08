@@ -1,10 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Forex Calculator</title>
-
 <style>
 body {
   font-family: Arial;
@@ -32,6 +25,7 @@ input, select {
   margin: 8px 0;
   border-radius: 8px;
   border: 1px solid #ccc;
+  font-size: 16px;
 }
 
 button {
@@ -55,94 +49,44 @@ button {
   margin-top: 10px;
   color: #555;
 }
+
+/* ✅ DARK MODE (works on phone + PC) */
+@media (prefers-color-scheme: dark) {
+
+  body {
+    background: #0f172a;
+  }
+
+  .calculator {
+    background: #111827;
+    color: #e5e7eb;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  }
+
+  input, select {
+    background: #1f2937;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+  }
+
+  input::placeholder {
+    color: #9ca3af;
+  }
+
+  button {
+    background: #2563eb;
+  }
+
+  button:hover {
+    background: #1d4ed8;
+  }
+
+  .result {
+    color: #ffffff;
+  }
+
+  .hint {
+    color: #9ca3af;
+  }
+}
 </style>
-</head>
-
-<body>
-
-<div class="calculator">
-  <h2>Forex Calculator</h2>
-
-  <input type="number" id="balance" placeholder="Balance ($)">
-  <input type="number" id="risk" placeholder="Risk %">
-  <input type="number" id="stopLoss" placeholder="Stop Loss (pips)">
-
-  <select id="pair" onchange="updateHint()">
-    <option value="EURUSD">EUR/USD</option>
-    <option value="GBPUSD">GBP/USD</option>
-    <option value="USDJPY">USD/JPY</option>
-  </select>
-
-  <button onclick="calculate()">Calculate</button>
-
-  <div class="result" id="result"></div>
-  <div class="hint" id="hint"></div>
-</div>
-
-<script>
-
-let usdJpyPrice = null;
-
-// Fetch live USDJPY
-async function fetchPrice() {
-  try {
-    const res = await fetch('https://cdn.moneyconvert.net/api/latest.json');
-    const data = await res.json();
-    usdJpyPrice = data.rates.JPY;
-    updateHint();
-  } catch (err) {
-    console.error("Price fetch failed", err);
-  }
-}
-
-function updateHint() {
-  const pair = document.getElementById('pair').value;
-  const hint = document.getElementById('hint');
-
-  if (pair === "USDJPY") {
-    hint.innerText = usdJpyPrice
-      ? `Live USDJPY: ${usdJpyPrice.toFixed(2)}`
-      : "Loading USDJPY...";
-  } else {
-    hint.innerText = "$10 per pip (EURUSD / GBPUSD)";
-  }
-}
-
-function calculate() {
-  const balance = parseFloat(document.getElementById('balance').value);
-  const risk = parseFloat(document.getElementById('risk').value);
-  const stopLoss = parseFloat(document.getElementById('stopLoss').value);
-  const pair = document.getElementById('pair').value;
-
-  if (!balance || !risk || !stopLoss) {
-    document.getElementById('result').innerText = "Fill all fields!";
-    return;
-  }
-
-  let pipValue;
-
-  if (pair === "USDJPY") {
-    if (!usdJpyPrice) {
-      document.getElementById('result').innerText = "Price loading...";
-      return;
-    }
-    pipValue = (0.01 / usdJpyPrice) * 100000;
-  } else {
-    pipValue = 10;
-  }
-
-  const riskAmount = balance * (risk / 100);
-  const lotSize = riskAmount / (stopLoss * pipValue);
-
-  // ✅ ONLY CHANGE HERE → 2 decimals
-  document.getElementById('result').innerText =
-    `Lot Size: ${lotSize.toFixed(2)} lots`;
-}
-
-// Init
-fetchPrice();
-
-</script>
-
-</body>
-</html>
