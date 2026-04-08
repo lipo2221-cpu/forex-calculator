@@ -1,131 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>USD/JPY Calculator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forex Calculator</title>
 
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f5f7fb;
-      color: #1e293b;
-      margin: 0;
-      padding: 16px;
-    }
+<style>
+body {
+  font-family: Arial;
+  background: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
 
-    .container {
-      max-width: 420px;
-      margin: auto;
-    }
+.calculator {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 360px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  text-align: center;
+}
 
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+input, select {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
 
-    .card {
-      background: #ffffff;
-      padding: 16px;
-      border-radius: 14px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }
+button {
+  width: 100%;
+  padding: 15px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+}
 
-    label {
-      font-size: 14px;
-      color: #475569;
-    }
+.result {
+  margin-top: 20px;
+  font-weight: bold;
+  font-size: 18px;
+}
 
-    input {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      margin-bottom: 12px;
-      border-radius: 10px;
-      border: 1px solid #dbeafe;
-      font-size: 16px;
-      background: #f8fafc;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #3b82f6;
-      background: #fff;
-    }
-
-    .result {
-      font-size: 18px;
-      font-weight: 600;
-      color: #2563eb;
-    }
-  </style>
+.hint {
+  font-size: 12px;
+  margin-top: 10px;
+  color: #555;
+}
+</style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>USD/JPY Calculator</h1>
 
-    <div class="card">
-      <label>Exchange Rate</label>
-      <input type="number" id="rate" value="150" step="0.01">
-    </div>
+<div class="calculator">
+  <h2>Forex Calculator</h2>
 
-    <div class="card">
-      <label>USD</label>
-      <input type="number" id="usd">
-      <div class="result" id="jpyResult">JPY: 0</div>
-    </div>
+  <input type="number" id="balance" placeholder="Balance ($)">
+  <input type="number" id="risk" placeholder="Risk %">
+  <input type="number" id="stopLoss" placeholder="Stop Loss (pips)">
 
-    <div class="card">
-      <label>JPY</label>
-      <input type="number" id="jpy">
-      <div class="result" id="usdResult">USD: 0</div>
-    </div>
+  <select id="pair" onchange="updateHint()">
+    <option value="EURUSD">EUR/USD</option>
+    <option value="GBPUSD">GBP/USD</option>
+    <option value="USDJPY">USD/JPY</option>
+  </select>
 
-    <div class="card">
-      <label>Lot Size</label>
-      <input type="number" id="lot">
+  <button onclick="calculate()">Calculate</button>
 
-      <label>Pips</label>
-      <input type="number" id="pips">
+  <div class="result" id="result"></div>
+  <div class="hint" id="hint"></div>
+</div>
 
-      <div class="result" id="pipValue">Pip Value: 0 USD</div>
-    </div>
-  </div>
+<script>
 
-  <script>
-    const rate = document.getElementById("rate");
-    const usd = document.getElementById("usd");
-    const jpy = document.getElementById("jpy");
-    const lot = document.getElementById("lot");
-    const pips = document.getElementById("pips");
+let usdJpyPrice = null;
 
-    const jpyResult = document.getElementById("jpyResult");
-    const usdResult = document.getElementById("usdResult");
-    const pipValue = document.getElementById("pipValue");
+// Fetch live USDJPY
+async function fetchPrice() {
+  try {
+    const res = await fetch('https://cdn.moneyconvert.net/api/latest.json');
+    const data = await res.json();
+    usdJpyPrice = data.rates.JPY;
+    updateHint();
+  } catch (err) {
+    console.error("Price fetch failed", err);
+  }
+}
 
-    usd.addEventListener("input", () => {
-      if (usd.value && rate.value) {
-        jpyResult.textContent = "JPY: " + (usd.value * rate.value).toFixed(2);
-      }
-    });
+function updateHint() {
+  const pair = document.getElementById('pair').value;
+  const hint = document.getElementById('hint');
 
-    jpy.addEventListener("input", () => {
-      if (jpy.value && rate.value) {
-        usdResult.textContent = "USD: " + (jpy.value / rate.value).toFixed(2);
-      }
-    });
+  if (pair === "USDJPY") {
+    hint.innerText = usdJpyPrice
+      ? `Live USDJPY: ${usdJpyPrice.toFixed(2)}`
+      : "Loading USDJPY...";
+  } else {
+    hint.innerText = "$10 per pip (EURUSD / GBPUSD)";
+  }
+}
 
-    function calcPip() {
-      if (lot.value && pips.value) {
-        const value = lot.value * 1000 * 0.01 * pips.value;
-        pipValue.textContent = "Pip Value: " + value.toFixed(2) + " USD";
-      }
+function calculate() {
+  const balance = parseFloat(document.getElementById('balance').value);
+  const risk = parseFloat(document.getElementById('risk').value);
+  const stopLoss = parseFloat(document.getElementById('stopLoss').value);
+  const pair = document.getElementById('pair').value;
+
+  if (!balance || !risk || !stopLoss) {
+    document.getElementById('result').innerText = "Fill all fields!";
+    return;
+  }
+
+  let pipValue;
+
+  if (pair === "USDJPY") {
+    if (!usdJpyPrice) {
+      document.getElementById('result').innerText = "Price loading...";
+      return;
     }
+    pipValue = (0.01 / usdJpyPrice) * 100000;
+  } else {
+    pipValue = 10;
+  }
 
-    lot.addEventListener("input", calcPip);
-    pips.addEventListener("input", calcPip);
-  </script>
+  const riskAmount = balance * (risk / 100);
+  const lotSize = riskAmount / (stopLoss * pipValue);
+
+  // ✅ ONLY CHANGE HERE → 2 decimals
+  document.getElementById('result').innerText =
+    `Lot Size: ${lotSize.toFixed(2)} lots`;
+}
+
+// Init
+fetchPrice();
+
+</script>
+
 </body>
 </html>
