@@ -1,103 +1,131 @@
-<style>
-body {
-  font-family: Arial;
-  background: #f0f2f5;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>USD/JPY Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-.calculator {
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  width: 95%;
-  max-width: 360px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-  text-align: center;
-  color: #111; /* ✅ ensure text visible */
-}
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f7fb;
+      color: #1e293b;
+      margin: 0;
+      padding: 16px;
+    }
 
-h2 {
-  color: #111;
-}
+    .container {
+      max-width: 420px;
+      margin: auto;
+    }
 
-input, select {
-  width: 100%;
-  padding: 14px;
-  margin: 8px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  background: white;
-  color: #111;
-}
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-button {
-  width: 100%;
-  padding: 15px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 18px;
-}
+    .card {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
 
-.result {
-  margin-top: 20px;
-  font-weight: bold;
-  font-size: 18px;
-  color: #003366;
-}
+    label {
+      font-size: 14px;
+      color: #475569;
+    }
 
-.hint {
-  font-size: 12px;
-  margin-top: 10px;
-  color: #555;
-}
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      border: 1px solid #dbeafe;
+      font-size: 16px;
+      background: #f8fafc;
+    }
 
-/* ✅ DARK MODE FIXED */
-@media (prefers-color-scheme: dark) {
+    input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: #fff;
+    }
 
-  body {
-    background: #0f172a;
-  }
+    .result {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+  </style>
+</head>
 
-  .calculator {
-    background: #111827;
-    color: #e5e7eb; /* ✅ FIX: text visible */
-  }
+<body>
+  <div class="container">
+    <h1>USD/JPY Calculator</h1>
 
-  h2 {
-    color: #e5e7eb;
-  }
+    <div class="card">
+      <label>Exchange Rate</label>
+      <input type="number" id="rate" value="150" step="0.01">
+    </div>
 
-  input, select {
-    background: #1f2937;
-    color: #e5e7eb;
-    border: 1px solid #374151;
-  }
+    <div class="card">
+      <label>USD</label>
+      <input type="number" id="usd">
+      <div class="result" id="jpyResult">JPY: 0</div>
+    </div>
 
-  input::placeholder {
-    color: #9ca3af;
-  }
+    <div class="card">
+      <label>JPY</label>
+      <input type="number" id="jpy">
+      <div class="result" id="usdResult">USD: 0</div>
+    </div>
 
-  button {
-    background: #2563eb;
-  }
+    <div class="card">
+      <label>Lot Size</label>
+      <input type="number" id="lot">
 
-  button:hover {
-    background: #1d4ed8;
-  }
+      <label>Pips</label>
+      <input type="number" id="pips">
 
-  .result {
-    color: #ffffff; /* ✅ FIX: result visible */
-  }
+      <div class="result" id="pipValue">Pip Value: 0 USD</div>
+    </div>
+  </div>
 
-  .hint {
-    color: #9ca3af;
-  }
-}
-</style>
+  <script>
+    const rate = document.getElementById("rate");
+    const usd = document.getElementById("usd");
+    const jpy = document.getElementById("jpy");
+    const lot = document.getElementById("lot");
+    const pips = document.getElementById("pips");
+
+    const jpyResult = document.getElementById("jpyResult");
+    const usdResult = document.getElementById("usdResult");
+    const pipValue = document.getElementById("pipValue");
+
+    usd.addEventListener("input", () => {
+      if (usd.value && rate.value) {
+        jpyResult.textContent = "JPY: " + (usd.value * rate.value).toFixed(2);
+      }
+    });
+
+    jpy.addEventListener("input", () => {
+      if (jpy.value && rate.value) {
+        usdResult.textContent = "USD: " + (jpy.value / rate.value).toFixed(2);
+      }
+    });
+
+    function calcPip() {
+      if (lot.value && pips.value) {
+        const value = lot.value * 1000 * 0.01 * pips.value;
+        pipValue.textContent = "Pip Value: " + value.toFixed(2) + " USD";
+      }
+    }
+
+    lot.addEventListener("input", calcPip);
+    pips.addEventListener("input", calcPip);
+  </script>
+</body>
+</html>
