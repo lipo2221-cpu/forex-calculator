@@ -47,6 +47,7 @@ button {
 .result {
   margin-top: 20px;
   font-weight: bold;
+  font-size: 18px;
 }
 
 .hint {
@@ -82,15 +83,13 @@ button {
 
 let usdJpyPrice = null;
 
-// ✅ Fetch live USDJPY price (hidden, no input field)
+// Fetch live USDJPY
 async function fetchPrice() {
   try {
     const res = await fetch('https://cdn.moneyconvert.net/api/latest.json');
     const data = await res.json();
-
     usdJpyPrice = data.rates.JPY;
     updateHint();
-
   } catch (err) {
     console.error("Price fetch failed", err);
   }
@@ -101,11 +100,9 @@ function updateHint() {
   const hint = document.getElementById('hint');
 
   if (pair === "USDJPY") {
-    if (usdJpyPrice) {
-      hint.innerText = `Live USDJPY: ${usdJpyPrice.toFixed(2)}`;
-    } else {
-      hint.innerText = "Loading USDJPY...";
-    }
+    hint.innerText = usdJpyPrice
+      ? `Live USDJPY: ${usdJpyPrice.toFixed(2)}`
+      : "Loading USDJPY...";
   } else {
     hint.innerText = "$10 per pip (EURUSD / GBPUSD)";
   }
@@ -129,9 +126,7 @@ function calculate() {
       document.getElementById('result').innerText = "Price loading...";
       return;
     }
-
     pipValue = (0.01 / usdJpyPrice) * 100000;
-
   } else {
     pipValue = 10;
   }
@@ -139,11 +134,12 @@ function calculate() {
   const riskAmount = balance * (risk / 100);
   const lotSize = riskAmount / (stopLoss * pipValue);
 
+  // ✅ ONLY CHANGE HERE → 2 decimals
   document.getElementById('result').innerText =
-    `Lot Size: ${lotSize.toFixed(4)} lots`;
+    `Lot Size: ${lotSize.toFixed(2)} lots`;
 }
 
-// Load price on start
+// Init
 fetchPrice();
 
 </script>
