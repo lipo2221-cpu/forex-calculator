@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Forex Calculator (Live)</title>
+<title>Forex Calculator</title>
 
 <style>
 body {
@@ -82,16 +82,15 @@ button {
 
 let usdJpyPrice = null;
 
-// ✅ Fetch live price on load
+// ✅ Fetch live USDJPY price (hidden, no input field)
 async function fetchPrice() {
   try {
     const res = await fetch('https://cdn.moneyconvert.net/api/latest.json');
     const data = await res.json();
 
     usdJpyPrice = data.rates.JPY;
-    console.log("USDJPY:", usdJpyPrice);
-
     updateHint();
+
   } catch (err) {
     console.error("Price fetch failed", err);
   }
@@ -105,10 +104,10 @@ function updateHint() {
     if (usdJpyPrice) {
       hint.innerText = `Live USDJPY: ${usdJpyPrice.toFixed(2)}`;
     } else {
-      hint.innerText = "Loading live USDJPY...";
+      hint.innerText = "Loading USDJPY...";
     }
   } else {
-    hint.innerText = "$10 per pip (standard pairs)";
+    hint.innerText = "$10 per pip (EURUSD / GBPUSD)";
   }
 }
 
@@ -127,11 +126,10 @@ function calculate() {
 
   if (pair === "USDJPY") {
     if (!usdJpyPrice) {
-      document.getElementById('result').innerText = "Price still loading...";
+      document.getElementById('result').innerText = "Price loading...";
       return;
     }
 
-    // ✅ REAL pip value calculation
     pipValue = (0.01 / usdJpyPrice) * 100000;
 
   } else {
