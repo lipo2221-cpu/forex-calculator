@@ -6,205 +6,151 @@
 <title>Forex Position Size Calculator</title>
 
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f0f2f5;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
 
-  .calculator {
-    background: #fff;
-    border-radius: 12px;
-    padding: 25px 20px;
-    width: 95%;
-    max-width: 360px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-    text-align: center;
-    color: #111;
-  }
+.calculator {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 360px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  text-align: center;
+}
 
-  h2 {
-    margin-bottom: 20px;
-    color: #333;
-  }
+h2 {
+  margin-bottom: 15px;
+}
 
-  input, select {
-    width: 100%;
-    padding: 14px;
-    margin: 8px 0 16px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    box-sizing: border-box;
-  }
+input, select {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
 
-  button {
-    width: 100%;
-    padding: 16px;
-    border-radius: 8px;
-    border: none;
-    background-color: #007bff;
-    color: #fff;
-    font-size: 18px;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
+button {
+  width: 100%;
+  padding: 15px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+}
 
-  button:hover {
-    background-color: #0056b3;
-  }
+button:hover {
+  background: #0056b3;
+}
 
-  .result {
-    margin-top: 20px;
-    padding: 12px;
-    border-radius: 8px;
-    background-color: #e6f0ff;
-    font-size: 18px;
-    font-weight: bold;
-    color: #003366;
-    word-break: break-word;
-    white-space: pre-line;
-  }
+.result {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+}
 
-  .hint {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #555;
-    line-height: 1.35;
-  }
+.hint {
+  font-size: 12px;
+  color: #555;
+  margin-top: 10px;
+}
 
-  /* ✅ Auto dark mode (follows phone theme) */
-  @media (prefers-color-scheme: dark) {
-    body {
-      background: #0f172a;
-    }
-
-    .calculator {
-      background: #111827;
-      color: #e5e7eb;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-    }
-
-    h2 {
-      color: #e5e7eb;
-    }
-
-    input, select {
-      background: #1f2937;
-      color: #e5e7eb;
-      border: 1px solid #374151;
-    }
-
-    input::placeholder {
-      color: #9ca3af;
-    }
-
-    button {
-      background-color: #2563eb;
-    }
-
-    button:hover {
-      background-color: #1d4ed8;
-    }
-
-    .result {
-      background-color: #1e3a8a;
-      color: #ffffff;
-    }
-
-    .hint {
-      color: #9ca3af;
-    }
-  }
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  body { background: #0f172a; }
+  .calculator { background: #111827; color: white; }
+  input, select { background: #1f2937; color: white; border: 1px solid #374151; }
+  button { background: #2563eb; }
+  .hint { color: #9ca3af; }
+}
 </style>
 </head>
 
 <body>
-<div class="calculator">
-  <h2>Forex Position Size Calculator</h2>
 
-  <input type="number" id="balance" placeholder="Account Balance (USD)">
-  <input type="number" id="risk" placeholder="Risk % per Trade">
+<div class="calculator">
+  <h2>Forex Calculator</h2>
+
+  <input type="number" id="balance" placeholder="Account Balance ($)">
+  <input type="number" id="risk" placeholder="Risk %">
   <input type="number" id="stopLoss" placeholder="Stop Loss (pips)">
 
-  <select id="pair">
-    <option value="USD">USD-based (EUR/USD, GBP/USD, etc.)</option>
-    <option value="JPY">JPY-based (USD/JPY)</option>
-    <option value="XAU">XAUUSD (Gold)</option>
+  <select id="pair" onchange="togglePriceInput()">
+    <option value="EURUSD">EUR/USD</option>
+    <option value="GBPUSD">GBP/USD</option>
+    <option value="USDJPY">USD/JPY</option>
   </select>
 
-  <button onclick="calculatePositionSize()">Calculate Lot Size</button>
+  <!-- Only needed for JPY -->
+  <input type="number" id="price" placeholder="USDJPY Price (e.g. 150.00)" style="display:none;">
+
+  <button onclick="calculate()">Calculate Lot Size</button>
 
   <div class="result" id="result"></div>
   <div class="hint" id="hint"></div>
 </div>
 
 <script>
-  // Load saved inputs on page load
-  window.onload = function() {
-    if (localStorage.getItem('balance')) document.getElementById('balance').value = localStorage.getItem('balance');
-    if (localStorage.getItem('risk')) document.getElementById('risk').value = localStorage.getItem('risk');
-    if (localStorage.getItem('stopLoss')) document.getElementById('stopLoss').value = localStorage.getItem('stopLoss');
-    if (localStorage.getItem('pair')) document.getElementById('pair').value = localStorage.getItem('pair');
 
-    updateHint();
-  };
+function togglePriceInput() {
+  const pair = document.getElementById('pair').value;
+  const priceInput = document.getElementById('price');
+  const hint = document.getElementById('hint');
 
-  document.getElementById('pair').addEventListener('change', updateHint);
+  if (pair === "USDJPY") {
+    priceInput.style.display = "block";
+    hint.innerText = "USD/JPY uses live price for accurate pip value.";
+  } else {
+    priceInput.style.display = "none";
+    hint.innerText = "EUR/USD & GBP/USD use fixed $10 per pip.";
+  }
+}
 
-  function updateHint() {
-    const pairType = document.getElementById('pair').value;
-    const hintEl = document.getElementById('hint');
+function calculate() {
+  const balance = parseFloat(document.getElementById('balance').value);
+  const risk = parseFloat(document.getElementById('risk').value);
+  const stopLoss = parseFloat(document.getElementById('stopLoss').value);
+  const pair = document.getElementById('pair').value;
+  const price = parseFloat(document.getElementById('price').value);
 
-    if (pairType === "XAU") {
-      hintEl.innerText =
-        "XAUUSD note: Assumes contract size = 100 oz and tick size = 0.01 (so ≈ $1 per pip per 1.00 lot if 1 pip = $0.01).";
-    } else if (pairType === "JPY") {
-      hintEl.innerText =
-        "JPY note: Pip value is approximated at $9.13 per pip per 1.00 lot for USDJPY.";
-    } else {
-      hintEl.innerText =
-        "USD-based note: Assumes $10 per pip per 1.00 lot (standard lot).";
-    }
+  if (!balance || !risk || !stopLoss) {
+    document.getElementById('result').innerText = "Enter all values!";
+    return;
   }
 
-  function calculatePositionSize() {
-    const balance = parseFloat(document.getElementById('balance').value);
-    const riskPercent = parseFloat(document.getElementById('risk').value);
-    const stopLoss = parseFloat(document.getElementById('stopLoss').value);
-    const pairType = document.getElementById('pair').value;
+  let pipValue;
 
-    if (isNaN(balance) || isNaN(riskPercent) || isNaN(stopLoss) || balance <= 0 || stopLoss <= 0) {
-      document.getElementById('result').innerText = "Please enter valid numbers!";
+  if (pair === "USDJPY") {
+    if (!price) {
+      document.getElementById('result').innerText = "Enter USDJPY price!";
       return;
     }
-
-    // Save inputs in local storage
-    localStorage.setItem('balance', balance);
-    localStorage.setItem('risk', riskPercent);
-    localStorage.setItem('stopLoss', stopLoss);
-    localStorage.setItem('pair', pairType);
-
-    updateHint();
-
-    const riskAmount = (riskPercent / 100) * balance;
-
-    // Default pip values per 1.00 standard lot
-    let pipValue = 10; // USD-based pair
-
-    if (pairType === "JPY") pipValue = 9.13; // USD/JPY approximate pip value
-    if (pairType === "XAU") pipValue = 1;    // XAUUSD: contract=100, tick=0.01 => ~$1 per pip (pip=$0.01) per 1.00 lot
-
-    const lotSize = riskAmount / (stopLoss * pipValue);
-
-    document.getElementById('result').innerText =
-      `Recommended Lot Size:\n${lotSize.toFixed(2)} standard lots`;
+    pipValue = (0.01 / price) * 100000;
+  } else {
+    pipValue = 10; // EURUSD & GBPUSD
   }
+
+  const riskAmount = balance * (risk / 100);
+  const lotSize = riskAmount / (stopLoss * pipValue);
+
+  document.getElementById('result').innerText =
+    `Lot Size: ${lotSize.toFixed(2)} lots`;
+}
+
+// Initialize hint on load
+togglePriceInput();
+
 </script>
 
 </body>
