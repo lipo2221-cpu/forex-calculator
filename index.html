@@ -68,31 +68,55 @@ button {
   <input type="number" id="stopLoss" placeholder="Stop Loss (pips)">
 
   <select id="pair">
+
+    <!-- EUR -->
     <option value="EURUSD">EUR/USD</option>
-    <option value="GBPUSD">GBP/USD</option>
-    <option value="USDJPY">USD/JPY</option>
-    <option value="AUDUSD">AUD/USD</option>
-    <option value="USDCAD">USD/CAD</option>
-    <option value="USDCHF">USD/CHF</option>
-    <option value="NZDUSD">NZD/USD</option>
-    <option value="EURJPY">EUR/JPY</option>
-    <option value="GBPJPY">GBP/JPY</option>
     <option value="EURGBP">EUR/GBP</option>
-    <option value="AUDJPY">AUD/JPY</option>
-    <option value="CADJPY">CAD/JPY</option>
-    <option value="CHFJPY">CHF/JPY</option>
-    <option value="NZDJPY">NZD/JPY</option>
+    <option value="EURJPY">EUR/JPY</option>
     <option value="EURAUD">EUR/AUD</option>
+    <option value="EURCAD">EUR/CAD</option>
+    <option value="EURCHF">EUR/CHF</option>
+    <option value="EURNZD">EUR/NZD</option>
+
+    <!-- GBP -->
+    <option value="GBPUSD">GBP/USD</option>
+    <option value="GBPJPY">GBP/JPY</option>
     <option value="GBPAUD">GBP/AUD</option>
+    <option value="GBPCAD">GBP/CAD</option>
+    <option value="GBPCHF">GBP/CHF</option>
+    <option value="GBPNZD">GBP/NZD</option>
+
+    <!-- AUD -->
+    <option value="AUDUSD">AUD/USD</option>
+    <option value="AUDJPY">AUD/JPY</option>
     <option value="AUDCAD">AUD/CAD</option>
     <option value="AUDCHF">AUD/CHF</option>
     <option value="AUDNZD">AUD/NZD</option>
-    <option value="CADCHF">CAD/CHF</option>
+
+    <!-- NZD -->
+    <option value="NZDUSD">NZD/USD</option>
+    <option value="NZDJPY">NZD/JPY</option>
     <option value="NZDCAD">NZD/CAD</option>
     <option value="NZDCHF">NZD/CHF</option>
+
+    <!-- USD -->
+    <option value="USDJPY">USD/JPY</option>
+    <option value="USDCAD">USD/CAD</option>
+    <option value="USDCHF">USD/CHF</option>
+
+    <!-- CAD -->
+    <option value="CADJPY">CAD/JPY</option>
+    <option value="CADCHF">CAD/CHF</option>
+
+    <!-- CHF -->
+    <option value="CHFJPY">CHF/JPY</option>
+
+    <!-- METALS -->
+    <option value="XAUUSD">XAU/USD (Gold)</option>
+
   </select>
 
-  <input type="text" id="customPair" placeholder="Or type pair (e.g. EURUSD)">
+  <input type="text" id="customPair" placeholder="Or type pair (e.g. NZDCAD)">
 
   <button onclick="calculate()">Calculate</button>
 
@@ -106,7 +130,7 @@ let livePrice = null;
 let ratesData = null;
 
 // =====================
-// LOCAL STORAGE
+// STORAGE
 // =====================
 function saveInputs() {
   localStorage.setItem('balance', balance.value);
@@ -127,7 +151,7 @@ function loadInputs() {
 }
 
 // =====================
-// GET ACTIVE PAIR
+// GET PAIR
 // =====================
 function getPair() {
   const custom = customPair.value.trim().toUpperCase();
@@ -135,34 +159,33 @@ function getPair() {
 }
 
 // =====================
-// FETCH LIVE PRICE
+// FETCH PRICE
 // =====================
 async function fetchPrice() {
   const activePair = getPair();
-
   if (activePair.length !== 6) return;
 
-  const base = activePair.substring(0, 3);
-  const quote = activePair.substring(3, 6);
+  const base = activePair.substring(0,3);
+  const quote = activePair.substring(3,6);
 
   try {
     const res = await fetch('https://cdn.moneyconvert.net/api/latest.json');
     const data = await res.json();
     ratesData = data.rates;
 
-    if (base === "USD") {
+    if (activePair === "XAUUSD") {
+      livePrice = ratesData["XAU"];
+    } else if (base === "USD") {
       livePrice = ratesData[quote];
     } else if (quote === "USD") {
       livePrice = 1 / ratesData[base];
     } else {
-      const baseRate = ratesData[base];
-      const quoteRate = ratesData[quote];
-      livePrice = quoteRate / baseRate;
+      livePrice = ratesData[quote] / ratesData[base];
     }
 
     updateHint();
   } catch (err) {
-    console.error("Price fetch failed", err);
+    console.error(err);
   }
 }
 
@@ -170,31 +193,29 @@ async function fetchPrice() {
 // UI
 // =====================
 function updateHint() {
-  const activePair = getPair();
+  const p = getPair();
 
-  if (!activePair || activePair.length !== 6) {
+  if (!p || p.length !== 6) {
     hint.innerText = "Enter valid pair (e.g. EURUSD)";
     return;
   }
 
-  if (livePrice) {
-    hint.innerText = `Live ${activePair}: ${livePrice.toFixed(5)}`;
-  } else {
-    hint.innerText = "Loading price...";
-  }
+  hint.innerText = livePrice
+    ? `Live ${p}: ${livePrice.toFixed(5)}`
+    : "Loading price...";
 }
 
 // =====================
-// CALCULATION
+// CALCULATE (FIXED)
 // =====================
 function calculate() {
   const balanceVal = parseFloat(balance.value);
   const riskVal = parseFloat(risk.value);
   const stopLossVal = parseFloat(stopLoss.value);
-  const activePair = getPair();
+  const pairName = getPair();
 
-  if (!balanceVal || !riskVal || !stopLossVal || activePair.length !== 6) {
-    result.innerText = "Fill all fields correctly!";
+  if (!balanceVal || !riskVal || !stopLossVal || pairName.length !== 6) {
+    result.innerText = "Fill all fields!";
     return;
   }
 
@@ -203,24 +224,38 @@ function calculate() {
     return;
   }
 
-  let pipValue;
+  const base = pairName.substring(0,3);
+  const quote = pairName.substring(3,6);
 
-  if (activePair.includes("JPY")) {
-    pipValue = (0.01 / livePrice) * 100000;
+  let pipSize;
+
+  // GOLD FIX
+  if (pairName === "XAUUSD") {
+    pipSize = 0.01;
+  } else if (pairName.includes("JPY")) {
+    pipSize = 0.01;
   } else {
-    pipValue = (0.0001 / livePrice) * 100000;
+    pipSize = 0.0001;
   }
 
-  const quote = activePair.substring(3, 6);
+  // Step 1: pip value in quote currency
+  let pipValueQuote = pipSize * 100000;
 
-  // Convert pip value to USD if needed
-  if (quote !== "USD") {
-    const rateToUSD = ratesData[quote];
-    pipValue = pipValue / rateToUSD;
+  let pipValueUSD;
+
+  // Step 2: convert to USD (MYFXBOOK LOGIC)
+  if (quote === "USD") {
+    pipValueUSD = pipValueQuote;
+  } 
+  else if (base === "USD") {
+    pipValueUSD = pipValueQuote / livePrice;
+  } 
+  else {
+    pipValueUSD = pipValueQuote / ratesData[quote];
   }
 
   const riskAmount = balanceVal * (riskVal / 100);
-  const lotSize = riskAmount / (stopLossVal * pipValue);
+  const lotSize = riskAmount / (stopLossVal * pipValueUSD);
 
   result.innerText = `Lot Size: ${lotSize.toFixed(2)} lots`;
 
@@ -245,9 +280,9 @@ customPair.addEventListener('input', () => {
 });
 
 // =====================
-// AUTO REFRESH PRICE
+// AUTO REFRESH
 // =====================
-setInterval(fetchPrice, 10000); // every 10s
+setInterval(fetchPrice, 10000);
 
 // =====================
 // INIT
