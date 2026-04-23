@@ -71,7 +71,28 @@ button {
     <option value="EURUSD">EUR/USD</option>
     <option value="GBPUSD">GBP/USD</option>
     <option value="USDJPY">USD/JPY</option>
+    <option value="AUDUSD">AUD/USD</option>
+    <option value="USDCAD">USD/CAD</option>
+    <option value="USDCHF">USD/CHF</option>
+    <option value="NZDUSD">NZD/USD</option>
+    <option value="EURJPY">EUR/JPY</option>
+    <option value="GBPJPY">GBP/JPY</option>
+    <option value="EURGBP">EUR/GBP</option>
+    <option value="AUDJPY">AUD/JPY</option>
+    <option value="CADJPY">CAD/JPY</option>
+    <option value="CHFJPY">CHF/JPY</option>
+    <option value="NZDJPY">NZD/JPY</option>
+    <option value="EURAUD">EUR/AUD</option>
+    <option value="GBPAUD">GBP/AUD</option>
+    <option value="AUDCAD">AUD/CAD</option>
+    <option value="AUDCHF">AUD/CHF</option>
+    <option value="AUDNZD">AUD/NZD</option>
+    <option value="CADCHF">CAD/CHF</option>
+    <option value="NZDCAD">NZD/CAD</option>
+    <option value="NZDCHF">NZD/CHF</option>
   </select>
+
+  <input type="text" id="customPair" placeholder="Or type pair (e.g. EURUSD)">
 
   <button onclick="calculate()">Calculate</button>
 
@@ -81,44 +102,64 @@ button {
 
 <script>
 
-let usdJpyPrice = null;
+let livePrice = null;
+let ratesData = null;
 
 // =====================
 // LOCAL STORAGE
 // =====================
 function saveInputs() {
-  localStorage.setItem('balance', document.getElementById('balance').value);
-  localStorage.setItem('risk', document.getElementById('risk').value);
-  localStorage.setItem('stopLoss', document.getElementById('stopLoss').value);
-  localStorage.setItem('pair', document.getElementById('pair').value);
-  localStorage.setItem('result', document.getElementById('result').innerText);
+  localStorage.setItem('balance', balance.value);
+  localStorage.setItem('risk', risk.value);
+  localStorage.setItem('stopLoss', stopLoss.value);
+  localStorage.setItem('pair', pair.value);
+  localStorage.setItem('customPair', customPair.value);
+  localStorage.setItem('result', result.innerText);
 }
 
 function loadInputs() {
-  if (localStorage.getItem('balance'))
-    document.getElementById('balance').value = localStorage.getItem('balance');
-
-  if (localStorage.getItem('risk'))
-    document.getElementById('risk').value = localStorage.getItem('risk');
-
-  if (localStorage.getItem('stopLoss'))
-    document.getElementById('stopLoss').value = localStorage.getItem('stopLoss');
-
-  if (localStorage.getItem('pair'))
-    document.getElementById('pair').value = localStorage.getItem('pair');
-
-  if (localStorage.getItem('result'))
-    document.getElementById('result').innerText = localStorage.getItem('result');
+  if (localStorage.getItem('balance')) balance.value = localStorage.getItem('balance');
+  if (localStorage.getItem('risk')) risk.value = localStorage.getItem('risk');
+  if (localStorage.getItem('stopLoss')) stopLoss.value = localStorage.getItem('stopLoss');
+  if (localStorage.getItem('pair')) pair.value = localStorage.getItem('pair');
+  if (localStorage.getItem('customPair')) customPair.value = localStorage.getItem('customPair');
+  if (localStorage.getItem('result')) result.innerText = localStorage.getItem('result');
 }
 
 // =====================
-// PRICE FETCH
+// GET ACTIVE PAIR
+// =====================
+function getPair() {
+  const custom = customPair.value.trim().toUpperCase();
+  return custom || pair.value;
+}
+
+// =====================
+// FETCH LIVE PRICE
 // =====================
 async function fetchPrice() {
+  const activePair = getPair();
+
+  if (activePair.length !== 6) return;
+
+  const base = activePair.substring(0, 3);
+  const quote = activePair.substring(3, 6);
+
   try {
     const res = await fetch('https://cdn.moneyconvert.net/api/latest.json');
     const data = await res.json();
-    usdJpyPrice = data.rates.JPY;
+    ratesData = data.rates;
+
+    if (base === "USD") {
+      livePrice = ratesData[quote];
+    } else if (quote === "USD") {
+      livePrice = 1 / ratesData[base];
+    } else {
+      const baseRate = ratesData[base];
+      const quoteRate = ratesData[quote];
+      livePrice = quoteRate / baseRate;
+    }
+
     updateHint();
   } catch (err) {
     console.error("Price fetch failed", err);
@@ -129,15 +170,17 @@ async function fetchPrice() {
 // UI
 // =====================
 function updateHint() {
-  const pair = document.getElementById('pair').value;
-  const hint = document.getElementById('hint');
+  const activePair = getPair();
 
-  if (pair === "USDJPY") {
-    hint.innerText = usdJpyPrice
-      ? `Live USDJPY: ${usdJpyPrice.toFixed(2)}`
-      : "Loading USDJPY...";
+  if (!activePair || activePair.length !== 6) {
+    hint.innerText = "Enter valid pair (e.g. EURUSD)";
+    return;
+  }
+
+  if (livePrice) {
+    hint.innerText = `Live ${activePair}: ${livePrice.toFixed(5)}`;
   } else {
-    hint.innerText = "$10 per pip (EURUSD / GBPUSD)";
+    hint.innerText = "Loading price...";
   }
 }
 
@@ -145,47 +188,66 @@ function updateHint() {
 // CALCULATION
 // =====================
 function calculate() {
-  const balance = parseFloat(document.getElementById('balance').value);
-  const risk = parseFloat(document.getElementById('risk').value);
-  const stopLoss = parseFloat(document.getElementById('stopLoss').value);
-  const pair = document.getElementById('pair').value;
+  const balanceVal = parseFloat(balance.value);
+  const riskVal = parseFloat(risk.value);
+  const stopLossVal = parseFloat(stopLoss.value);
+  const activePair = getPair();
 
-  if (!balance || !risk || !stopLoss) {
-    document.getElementById('result').innerText = "Fill all fields!";
+  if (!balanceVal || !riskVal || !stopLossVal || activePair.length !== 6) {
+    result.innerText = "Fill all fields correctly!";
+    return;
+  }
+
+  if (!livePrice || !ratesData) {
+    result.innerText = "Price loading...";
     return;
   }
 
   let pipValue;
 
-  if (pair === "USDJPY") {
-    if (!usdJpyPrice) {
-      document.getElementById('result').innerText = "Price loading...";
-      return;
-    }
-    pipValue = (0.01 / usdJpyPrice) * 100000;
+  if (activePair.includes("JPY")) {
+    pipValue = (0.01 / livePrice) * 100000;
   } else {
-    pipValue = 10;
+    pipValue = (0.0001 / livePrice) * 100000;
   }
 
-  const riskAmount = balance * (risk / 100);
-  const lotSize = riskAmount / (stopLoss * pipValue);
+  const quote = activePair.substring(3, 6);
 
-  document.getElementById('result').innerText =
-    `Lot Size: ${lotSize.toFixed(2)} lots`;
+  // Convert pip value to USD if needed
+  if (quote !== "USD") {
+    const rateToUSD = ratesData[quote];
+    pipValue = pipValue / rateToUSD;
+  }
 
-  saveInputs(); // save result too
+  const riskAmount = balanceVal * (riskVal / 100);
+  const lotSize = riskAmount / (stopLossVal * pipValue);
+
+  result.innerText = `Lot Size: ${lotSize.toFixed(2)} lots`;
+
+  saveInputs();
 }
 
 // =====================
-// EVENT LISTENERS
+// EVENTS
 // =====================
-document.getElementById('balance').addEventListener('input', saveInputs);
-document.getElementById('risk').addEventListener('input', saveInputs);
-document.getElementById('stopLoss').addEventListener('input', saveInputs);
-document.getElementById('pair').addEventListener('change', () => {
+balance.addEventListener('input', saveInputs);
+risk.addEventListener('input', saveInputs);
+stopLoss.addEventListener('input', saveInputs);
+
+pair.addEventListener('change', () => {
   saveInputs();
-  updateHint();
+  fetchPrice();
 });
+
+customPair.addEventListener('input', () => {
+  saveInputs();
+  fetchPrice();
+});
+
+// =====================
+// AUTO REFRESH PRICE
+// =====================
+setInterval(fetchPrice, 10000); // every 10s
 
 // =====================
 // INIT
